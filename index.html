@@ -1,28 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <title>SPMS</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Stock Portfolio Management System</title>
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <!--Babel for JSX -->
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
     <!-- Roboto from Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link rel="stylesheet" href="main.css">
   </head>
   <body>
+    <div id="container"></div>
 
-    <h2>Add React in One Minute</h2>
-    <p>This page demonstrates using React with no build tooling.</p>
-    <p>React is loaded as a script tag.</p>
+    <script type="text/babel">
 
-    <!-- We will put our React component inside this div. -->
-    <div id="like_button_container"></div>
+    class Portfolio extends React.Component{
+      constructor(props) {
+        super(props);
+        this.state = {editing: false};
 
-    <!-- Load React. -->
-    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+        this.edit = this.edit.bind(this);
+        this.remove = this.remove.bind(this);
+        this.save = this.save.bind(this);
+        this.cancel = this.cancel.bind(this);
+      }
 
-    <!-- Load our React component. -->
-    <script src="main.js"></script>
+      edit() {
+        this.setState({editing: true})
+      }
 
+      remove() {
+        this.props.deleteFromBoard(this.props.index)
+      }
+
+      save() {
+        this.props.updatePortfolioName(this.refs.newName.value, this.props.index)
+        this.setState({editing: false})
+      }
+
+      cancel() {
+        this.setState({editing: false})
+      }
+
+      renderNormal() {
+        return(
+          <div className="portfolioContainer">
+            <button onClick={this.remove} className="button-danger">X</button>
+            <button onClick={this.edit} className="button-edit">Edit</button>
+            <div className="portfolioName">{this.props.children}</div>
+          </div>
+        );
+      }
+
+      renderForm() {
+        return(
+          <div className="portfolioContainer">
+          <button onClick={this.cancel} className="button-cancel">Cancel</button>
+            <button onClick={this.save} className="button-save">Save</button>
+            <textarea ref="newName" defaultValue={this.props.children}></textarea><br></br>
+          </div>
+        );
+      }
+
+      render() {
+        if (this.state.editing){
+          return this.renderForm();
+        } else {
+          return this.renderNormal();
+        }
+      }
+    };
+
+    class Board extends React.Component{
+      constructor(props) {
+        super(props);
+        this.state = {portfolios: [], creating: false};
+
+        this.add = this.add.bind(this);
+        this.cancel = this.cancel.bind(this);
+        this.updatePortfolio = this.updatePortfolio.bind(this);
+        this.removePortfolio = this.removePortfolio.bind(this);
+        this.eachPortfolio = this.eachPortfolio.bind(this);
+        this.addPortfolio = this.addPortfolio.bind(this);
+      }
+
+      add() {
+        this.setState({creating: true})
+      }
+
+      cancel() {
+        this.setState({creating: false})
+      }
+
+      addPortfolio() {
+        name = this.refs.addName.value;
+        var arr = this.state.portfolios;
+        if (arr.length < 10){
+          arr.push(name);
+          this.setState({portfolios: arr})
+          console.log('Adding portfolio: ' + name);
+          //this.setState({creating: false})
+        } else {
+          console.log('Maximum number of portfolios');
+          alert("You already have the maximum amount of allowed portfolios");
+        }
+      }
+
+      removePortfolio(i) {
+        console.log('Removing portfolio: ' + i);
+        var arr = this.state.portfolios;
+        arr.splice(i, 1);
+        this.setState({portfolios: arr})
+      }
+
+      updatePortfolio(newName, i) {
+        console.log('Updating portfolio: ' + i);
+        var arr = this.state.portfolios;
+        arr[i] = newName;
+        this.setState({portfolios: arr})
+      }
+
+      eachPortfolio(name, i) {
+        return (
+                  <Portfolio key={i} index={i} updatePortfolioName={this.updatePortfolio} deleteFromBoard={this.removePortfolio}>
+                  {name}
+                  </Portfolio>
+                );
+      }
+
+      renderNormal() {
+        return(
+          <div>
+            <button onClick={this.add} className="button-info">Create new portfolio</button>
+            <div className="board">
+              {this.state.portfolios.map(this.eachPortfolio)}
+            </div>
+          </div>
+        );
+      }
+
+      renderForm() {
+        return(
+          <div>
+            <button onClick={this.cancel} className="button-disabled">Create new portfolio</button>
+            <p>Enter portfolio name:</p>
+            <textarea ref="addName" defaultValue="Default Portfolio"></textarea>
+            <button onClick={this.addPortfolio} className="button-confirm">Add</button>
+            <div className="board">
+              {this.state.portfolios.map(this.eachPortfolio)}
+            </div>
+          </div>
+        );
+      }
+
+      render() {
+        if (this.state.creating){
+          return this.renderForm();
+        } else {
+          return this.renderNormal();
+        }
+      }
+
+      /*
+      render() {
+        return(
+          <div>
+            <textarea ref="test" defaultValue="Testing"></textarea>
+            <button onClick={this.addPortfolio} className="button-info">Add portfolio</button>
+            <div className="board">
+              {this.state.portfolios.map(this.eachPortfolio)}
+            </div>
+          </div>
+        );
+      }
+      */
+    };
+
+    ReactDOM.render(<Board />, document.getElementById('container'));
+
+    </script>
   </body>
 </html>
