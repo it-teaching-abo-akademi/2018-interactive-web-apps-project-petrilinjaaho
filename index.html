@@ -18,15 +18,87 @@
 
     <script type="text/babel">
 
+    class Stock extends React.Component{
+      constructor(props) {
+        super(props);
+        this.state = {count: 0};
+
+        this.remove = this.remove.bind(this);
+        this.increase = this.increase.bind(this);
+        this.decrease = this.decrease.bind(this);
+      }
+
+      remove() {
+        this.props.deleteFromPortfolio(this.props.index)
+      }
+
+      increase() {
+        this.setState({
+    			count: this.state.count + 1
+    			});
+          this.props.bacon(this.state.count, this.props.index)
+      }
+
+      decrease() {
+        this.setState({
+          count: this.state.count - 1
+          });
+          this.props.bacon(this.state.count, this.props.index)
+      }
+
+      render() {
+        return(
+          <tr>
+            <td>
+              {this.props.children}
+            </td>
+            <td>
+              0 $
+            </td>
+            <td>
+              {this.state.count}
+              <button onClick={this.increase} className="button-danger">+</button>
+              <button onClick={this.decrease} className="button-danger">-</button>
+            </td>
+            <td>
+              0 $
+            </td>
+            <td>
+            <button onClick={this.remove} className="button-danger">X</button>
+            </td>
+          </tr>
+        );
+      }
+    };
+
+
+
     class Portfolio extends React.Component{
       constructor(props) {
         super(props);
-        this.state = {editing: false};
+        this.state = {stocks: [], amounts: [], editing: false, adding: false};
 
         this.edit = this.edit.bind(this);
         this.remove = this.remove.bind(this);
         this.save = this.save.bind(this);
         this.cancel = this.cancel.bind(this);
+
+        this.addNewStock = this.addNewStock.bind(this);
+        this.cancelNewStock = this.cancelNewStock.bind(this);
+        this.updateStock = this.updateStock.bind(this);
+        this.removeStock = this.removeStock.bind(this);
+        this.eachStock = this.eachStock.bind(this);
+        this.addStock = this.addStock.bind(this);
+
+        this.bacon = this.bacon.bind(this);
+      }
+
+      addNewStock() {
+        this.setState({adding: true})
+      }
+
+      cancelNewStock() {
+        this.setState({adding: false})
       }
 
       edit() {
@@ -46,34 +118,82 @@
         this.setState({editing: false})
       }
 
-      renderNormal() {
-        return(
-          <div className="portfolioContainer">
-            <button onClick={this.remove} className="button-danger">X</button>
-            <button onClick={this.edit} className="button-edit">Edit</button>
-            <div className="portfolioName">{this.props.children}</div>
-          </div>
-        );
+      addStock() {
+        name = this.refs.addStockName.value;
+        var arr = this.state.stocks;
+        if (arr.length < 50){
+          arr.push(name);
+          this.setState({stocks: arr})
+          console.log('Adding stock: ' + name);
+        } else {
+          console.log('Maximum number of different stocks');
+          alert("You already have the maximum amount of different stocks");
+        }
+        this.setState({adding: false})
       }
 
-      renderForm() {
-        return(
-          <div className="portfolioContainer">
-          <button onClick={this.cancel} className="button-cancel">Cancel</button>
-            <button onClick={this.save} className="button-save">Save</button>
-            <textarea ref="newName" defaultValue={this.props.children}></textarea><br></br>
-          </div>
-        );
+      removeStock(i) {
+        console.log('Removing stock: ' + i);
+        var arr = this.state.stocks;
+        arr.splice(i, 1);
+        this.setState({stocks: arr})
+      }
+
+      updateStock(newAmount, i) {
+        console.log('Updating stock: ' + i);
+        var arr = this.state.amounts;
+        arr[i] = newAmount;
+        this.setState({stocks: arr})
+      }
+
+      bacon(newAmount, i) {
+        console.log('Updating bacon: ' + i);
+        var arr = this.state.amounts;
+        arr[i] = newAmount;
+        this.setState({amounts: arr})
+      }
+
+      eachStock(name, i) {
+        return (
+                  <Stock key={i} index={i} updateStockAmount={this.updateStock} deleteFromPortfolio={this.removeStock} bacon={this.bacon}>
+                  {name}
+                  </Stock>
+                );
       }
 
       render() {
-        if (this.state.editing){
-          return this.renderForm();
-        } else {
-          return this.renderNormal();
-        }
+        return(
+          <div className="portfolioContainer">
+            <button onClick={this.remove} className="button-danger">X</button>
+            <div className="portfolioName">{this.props.children}</div>
+
+            <div id="table-wrapper">
+              <div id="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><span className="text">Name</span></th>
+                            <th><span className="text">Unit value</span></th>
+                            <th><span className="text">Quantity</span></th>
+                            <th><span className="text">Total value</span></th>
+                            <th><span className="text">Select</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      {this.state.stocks.map(this.eachStock)}
+                    </tbody>
+                </table>
+              </div>
+            </div>
+            <p>Enter stock symbol:</p>
+            <textarea ref="addStockName" defaultValue="Default Stock"></textarea>
+            <button onClick={this.addStock} className="button-default">Add stock</button>
+          </div>
+        );
       }
     };
+
+
 
     class Board extends React.Component{
       constructor(props) {
@@ -158,11 +278,16 @@
       }
 
       render() {
-        if (this.state.creating){
-          return this.renderForm();
-        } else {
-          return this.renderNormal();
-        }
+        return(
+          <div>
+            <p>Enter portfolio name:</p>
+            <textarea ref="addName" defaultValue="Default Portfolio"></textarea>
+            <button onClick={this.addPortfolio} className="button-info">Add New Portfolio</button>
+            <div className="board">
+              {this.state.portfolios.map(this.eachPortfolio)}
+            </div>
+          </div>
+        );
       }
 
       /*
