@@ -67,14 +67,26 @@
         client.send();
       }
 
-
-      updateTotal() {
+      /*
+      updateTotalold() {
         //this.setState({
           //total: this.state.count * this.state.value
           //});
           this.setState((state) => {
             return {total: this.state.count * this.state.value}
             });
+      }
+      */
+
+      updateTotal() {
+        var calculatedTotal = this.state.count * this.state.value;
+        //this.setState((state) => {
+        //return {total: calculatedTotal}
+        //});
+        this.setState({
+          total: calculatedTotal
+          });
+        this.sendTotal();
       }
 
       sendTotal() {
@@ -91,6 +103,8 @@
     			//count: this.state.count + 1
     			//});
         this.state.count++;
+        var calculatedTotal = this.state.count * this.state.value;
+        this.props.updatePortfolioTotal(calculatedTotal, this.props.index)
         this.setState((state) => {
           return {total: this.state.count * this.state.value}
           });
@@ -101,8 +115,10 @@
           //count: this.state.count - 1
           //});
       this.state.count--;
+      var calculatedTotal = this.state.count * this.state.value;
+      this.props.updatePortfolioTotal(calculatedTotal, this.props.index)
       this.setState((state) => {
-        return {total: this.state.count * this.state.value}
+        return {total: calculatedTotal}
         });
       }
 
@@ -124,7 +140,6 @@
             </td>
             <td>
               {this.state.total} $
-              <button onClick={this.updateTotal} className="button-danger">R</button>
             </td>
             <td>
             <input type="checkbox" onChange={this.handleChecked} defaultChecked={this.state.checked} />
@@ -216,7 +231,6 @@
         //console.log('Updating total ' + i + 'with ' + val);
         var arr = this.state.totals;
         arr[i] = val;
-
         this.test3 = 0;
 
         var j;
