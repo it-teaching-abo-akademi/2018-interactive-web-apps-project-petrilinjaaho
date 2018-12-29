@@ -1,11 +1,11 @@
 .board{
-  background-color: lightblue;
+  background-color: white;
   padding: 2rem;
 }
 
 .portfolioContainer {
   max-width: 500px;
-  background-color: lightgrey;
+  background-color: PowderBlue;
   border: 3px solid darkblue;
   padding: 1rem;
   margin: 1rem;
@@ -77,6 +77,6 @@
 
 }
 #table-wrapper table * {
-  background:yellow;
-  color:black;
+  background: DodgerBlue;
+  color: black;
 }

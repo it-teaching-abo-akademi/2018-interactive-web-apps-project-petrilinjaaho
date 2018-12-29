@@ -28,92 +28,57 @@
         this.decrease = this.decrease.bind(this);
         this.fetchData = this.fetchData.bind(this);
 
-        this.updateTotal = this.updateTotal.bind(this);
-        this.sendTotal = this.sendTotal.bind(this);
-
         this.handleChecked = this.handleChecked.bind(this);
 
-        //this.testBacon = this.testBacon.bind(this);
       }
 
+      // Send checked property
       handleChecked() {
-        this.setState({checked: !this.state.checked})
-        console.log('Changing checked state');
+        var checkStatus = !this.state.checked;
+        this.props.updateCheckedStatus(checkStatus, this.props.index)
+        this.setState({checked: checkStatus})
+        console.log('Changing checked state to: ' + checkStatus);
       }
 
       fetchData() {
         var symbol = this.props.children;
         var val;
+
+        //API call
         var client = new XMLHttpRequest();
         client.open("GET", "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + symbol + "&apikey=AAPWQOKX0SQKBWAM", true);
         client.onreadystatechange = function() {
         	if(client.readyState == 4) {
-        		//alert(client.responseText);
             var obj = JSON.parse(client.responseText);
-            //alert(obj["Meta Data"]["1. Information"]);
-            //alert(obj["Time Series (Daily)"]["2018-12-18"]["4. close"]);
 
+            // Get newest data
             var firstKey = Object.keys(obj["Time Series (Daily)"])[0];
             val = obj["Time Series (Daily)"][firstKey]["4. close"];
             this.setState({value: val});
-
-            //for (var key in obj["Time Series (Daily)"]) {
-              //alert(key);
-            //}
-            //alert(Object.keys(obj["Time Series (Daily)"])[0]);
           };
         }.bind(this);
 
         client.send();
       }
 
-      /*
-      updateTotalold() {
-        //this.setState({
-          //total: this.state.count * this.state.value
-          //});
-          this.setState((state) => {
-            return {total: this.state.count * this.state.value}
-            });
-      }
-      */
-
-      updateTotal() {
-        var calculatedTotal = this.state.count * this.state.value;
-        //this.setState((state) => {
-        //return {total: calculatedTotal}
-        //});
-        this.setState({
-          total: calculatedTotal
-          });
-        this.sendTotal();
-      }
-
-      sendTotal() {
-        this.props.updatePortfolioTotal(this.state.total, this.props.index)
-      }
-
+      // Removing stock (does not work correctly, setting states to 0 to fix so pressing refresh provides somewhat acceptable usability)
       remove() {
-        this.props.deleteFromPortfolio(this.props.index)
+        this.state.count = 0;
+        this.state.value = 0;
+        this.state.total = 0;
+        this.props.deleteSingleStock(this.props.index)
       }
 
       increase() {
-        //this.state.total = this.state.count * this.state.value
-        //this.setState({
-    			//count: this.state.count + 1
-    			//});
         this.state.count++;
         var calculatedTotal = this.state.count * this.state.value;
         this.props.updatePortfolioTotal(calculatedTotal, this.props.index)
         this.setState((state) => {
-          return {total: this.state.count * this.state.value}
+          return {total: calculatedTotal}
           });
       }
 
       decrease() {
-        //this.setState({
-          //count: this.state.count - 1
-          //});
       this.state.count--;
       var calculatedTotal = this.state.count * this.state.value;
       this.props.updatePortfolioTotal(calculatedTotal, this.props.index)
@@ -127,7 +92,6 @@
           <tr>
             <td>
               {this.props.children}
-              <button onClick={this.sendTotal} className="button-danger">S</button>
             </td>
             <td>
               {this.state.value} $
@@ -155,48 +119,24 @@
     class Portfolio extends React.Component{
       constructor(props) {
         super(props);
-        this.state = {stocks: [], amounts: [], totals: [], editing: false, adding: false};
+        this.state = {stocks: [], totals: [], checks: []};
 
-        this.edit = this.edit.bind(this);
         this.remove = this.remove.bind(this);
-        this.save = this.save.bind(this);
-        this.cancel = this.cancel.bind(this);
 
-        this.addNewStock = this.addNewStock.bind(this);
-        this.cancelNewStock = this.cancelNewStock.bind(this);
-        this.updateStock = this.updateStock.bind(this);
+        this.addStock = this.addStock.bind(this);
         this.removeStock = this.removeStock.bind(this);
         this.eachStock = this.eachStock.bind(this);
-        this.addStock = this.addStock.bind(this);
 
         this.portfolioTotal = this.portfolioTotal.bind(this);
+        this.getCheckedStocks = this.getCheckedStocks.bind(this);
 
-        this.test3 = 0;
-      }
+        this.drawGraph = this.drawGraph.bind(this);
 
-      addNewStock() {
-        this.setState({adding: true})
-      }
-
-      cancelNewStock() {
-        this.setState({adding: false})
-      }
-
-      edit() {
-        this.setState({editing: true})
+        this.portfolio_total_value = 0;
       }
 
       remove() {
         this.props.deleteFromBoard(this.props.index)
-      }
-
-      save() {
-        this.props.updatePortfolioName(this.refs.newName.value, this.props.index)
-        this.setState({editing: false})
-      }
-
-      cancel() {
-        this.setState({editing: false})
       }
 
       addStock() {
@@ -216,37 +156,54 @@
       removeStock(i) {
         console.log('Removing stock: ' + i);
         var arr = this.state.stocks;
+        var arr2 = this.state.totals;
+        var arr3 = this.state.checks;
         arr.splice(i, 1);
-        this.setState({stocks: arr})
+        arr2.splice(i, 1);
+        arr3.splice(i, 1);
+        this.setState({
+                        stocks: arr,
+                        totals: arr2,
+                        checks: arr3
+                      })
       }
 
-      updateStock(newAmount, i) {
-        console.log('Updating stock: ' + i);
-        var arr = this.state.amounts;
-        arr[i] = newAmount;
-        this.setState({stocks: arr})
-      }
 
       portfolioTotal(val, i) {
-        //console.log('Updating total ' + i + 'with ' + val);
         var arr = this.state.totals;
         arr[i] = val;
-        this.test3 = 0;
+        this.portfolio_total_value = 0;
 
         var j;
           for (j = 0; j < arr.length; j++) {
-            this.test3 += arr[j];
+            this.portfolio_total_value += arr[j];
           }
-        //this.test3 += val;
+
+        this.setState({totals: arr})
+      }
+
+      getCheckedStocks(boolVal, i) {
+        var arr = this.state.checks;
+        arr[i] = boolVal;
+        console.log('Updating check status of ' + i + ' to ' + boolVal);
         this.setState({totals: arr})
       }
 
       eachStock(name, i) {
         return (
-                  <Stock key={i} index={i} updateStockAmount={this.updateStock} deleteFromPortfolio={this.removeStock} updatePortfolioTotal={this.portfolioTotal}>
+                  <Stock key={i} index={i} updateStockAmount={this.updateStock} deleteSingleStock={this.removeStock} updatePortfolioTotal={this.portfolioTotal} updateCheckedStatus={this.getCheckedStocks}>
                   {name}
                   </Stock>
                 );
+      }
+
+      drawGraph() {
+        var arr = this.state.checks;
+
+        var j;
+        for (j = 0; j < arr.length; j++) {
+            console.log('Value of ' + j + ' is ' + arr[j]);
+        }
       }
 
       render() {
@@ -273,10 +230,11 @@
                 </table>
               </div>
             </div>
-            <p>Total value of portfolio: {this.test3}</p>
+            <p>Total value of portfolio: {this.portfolio_total_value}</p>
             <p>Enter stock symbol:</p>
             <textarea ref="addStockName" defaultValue="Default Stock"></textarea>
             <button onClick={this.addStock} className="button-default">Add stock</button>
+            <button onClick={this.drawGraph} className="button-default">Draw graph</button>
           </div>
         );
       }
@@ -289,20 +247,9 @@
         super(props);
         this.state = {portfolios: [], creating: false};
 
-        this.add = this.add.bind(this);
-        this.cancel = this.cancel.bind(this);
-        this.updatePortfolio = this.updatePortfolio.bind(this);
+        this.addPortfolio = this.addPortfolio.bind(this);
         this.removePortfolio = this.removePortfolio.bind(this);
         this.eachPortfolio = this.eachPortfolio.bind(this);
-        this.addPortfolio = this.addPortfolio.bind(this);
-      }
-
-      add() {
-        this.setState({creating: true})
-      }
-
-      cancel() {
-        this.setState({creating: false})
       }
 
       addPortfolio() {
@@ -326,44 +273,12 @@
         this.setState({portfolios: arr})
       }
 
-      updatePortfolio(newName, i) {
-        console.log('Updating portfolio: ' + i);
-        var arr = this.state.portfolios;
-        arr[i] = newName;
-        this.setState({portfolios: arr})
-      }
-
       eachPortfolio(name, i) {
         return (
-                  <Portfolio key={i} index={i} updatePortfolioName={this.updatePortfolio} deleteFromBoard={this.removePortfolio}>
+                  <Portfolio key={i} index={i} deleteFromBoard={this.removePortfolio}>
                   {name}
                   </Portfolio>
                 );
-      }
-
-      renderNormal() {
-        return(
-          <div>
-            <button onClick={this.add} className="button-info">Create new portfolio</button>
-            <div className="board">
-              {this.state.portfolios.map(this.eachPortfolio)}
-            </div>
-          </div>
-        );
-      }
-
-      renderForm() {
-        return(
-          <div>
-            <button onClick={this.cancel} className="button-disabled">Create new portfolio</button>
-            <p>Enter portfolio name:</p>
-            <textarea ref="addName" defaultValue="Default Portfolio"></textarea>
-            <button onClick={this.addPortfolio} className="button-confirm">Add</button>
-            <div className="board">
-              {this.state.portfolios.map(this.eachPortfolio)}
-            </div>
-          </div>
-        );
       }
 
       render() {
@@ -378,20 +293,6 @@
           </div>
         );
       }
-
-      /*
-      render() {
-        return(
-          <div>
-            <textarea ref="test" defaultValue="Testing"></textarea>
-            <button onClick={this.addPortfolio} className="button-info">Add portfolio</button>
-            <div className="board">
-              {this.state.portfolios.map(this.eachPortfolio)}
-            </div>
-          </div>
-        );
-      }
-      */
     };
 
     ReactDOM.render(<Board />, document.getElementById('container'));
